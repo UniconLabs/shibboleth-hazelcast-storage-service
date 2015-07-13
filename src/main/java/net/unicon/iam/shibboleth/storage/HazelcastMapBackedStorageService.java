@@ -90,17 +90,23 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
     @Override
     public boolean update(@Nonnull String context, @Nonnull String key, @Nonnull String value, @Nullable Long expiration) throws IOException {
         IMap<String, StorageRecord> backingMap = hazelcastInstance.getMap(context);
-        if (!backingMap.containsKey(key)) {
-            return false;
+        final Lock lock = hazelcastInstance.getLock(context + ":" + key);
+        lock.lock();
+        try {
+            if (!backingMap.containsKey(key)) {
+                return false;
+            }
+            SerializableMutableStorageRecord record = (SerializableMutableStorageRecord) backingMap.get(key);
+            if (value != null) {
+                record.setValue(value);
+                record.incrementVersion();
+            }
+            record.setExpiration(getSystemExpiration(expiration));
+            backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
+            return true;
+        } finally {
+            lock.unlock();
         }
-        SerializableMutableStorageRecord record = (SerializableMutableStorageRecord) backingMap.get(key);
-        if (value != null) {
-            record.setValue(value);
-            record.incrementVersion();
-        }
-        record.setExpiration(getSystemExpiration(expiration));
-        backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
-        return true;
     }
 
     /**
@@ -110,20 +116,26 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
     @Override
     public Long updateWithVersion(long version, @Nonnull String context, @Nonnull String key, @Nonnull String value, @Nullable Long expiration) throws IOException, VersionMismatchException {
         IMap<String, StorageRecord> backingMap = hazelcastInstance.getMap(context);
-        if (!backingMap.containsKey(key)) {
-            return null;
+        final Lock lock = hazelcastInstance.getLock(context + ":" + key);
+        lock.lock();
+        try {
+            if (!backingMap.containsKey(key)) {
+                return null;
+            }
+            SerializableMutableStorageRecord record = (SerializableMutableStorageRecord) backingMap.get(key);
+            if (version != record.getVersion()) {
+                throw new VersionMismatchException();
+            }
+            if (value != null) {
+                record.setValue(value);
+                record.incrementVersion();
+            }
+            record.setExpiration(expiration);
+            backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
+            return record.getVersion();
+        } finally {
+            lock.unlock();
         }
-        SerializableMutableStorageRecord record = (SerializableMutableStorageRecord) backingMap.get(key);
-        if (version != record.getVersion()) {
-            throw new VersionMismatchException();
-        }
-        if (value != null) {
-            record.setValue(value);
-            record.incrementVersion();
-        }
-        record.setExpiration(expiration);
-        backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
-        return record.getVersion();
     }
 
     /**
@@ -132,13 +144,19 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
     @Override
     public boolean updateExpiration(@Nonnull String context, @Nonnull String key, @Nullable Long expiration) throws IOException {
         IMap<String, StorageRecord> backingMap = hazelcastInstance.getMap(context);
-        if (!backingMap.containsKey(key)) {
-            return false;
+        final Lock lock = hazelcastInstance.getLock(context + ":" + key);
+        lock.lock();
+        try {
+            if (!backingMap.containsKey(key)) {
+                return false;
+            }
+            SerializableMutableStorageRecord record = (SerializableMutableStorageRecord) backingMap.get(key);
+            record.setExpiration(expiration);
+            backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
+            return true;
+        } finally {
+            lock.unlock();
         }
-        SerializableMutableStorageRecord record = (SerializableMutableStorageRecord) backingMap.get(key);
-        record.setExpiration(expiration);
-        backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
-        return true;
     }
 
     /**
@@ -185,10 +203,10 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
      */
     @Override
     public void updateContextExpiration(@Nonnull String context, @Nullable Long expiration) throws IOException {
-        final Lock lock = hazelcastInstance.getLock(context);
         IMap<String, StorageRecord> backingMap = hazelcastInstance.getMap(context);
+        final Lock lock = hazelcastInstance.getLock(context);
+        lock.lock();
         try {
-            lock.lock();
             for (Map.Entry entry: backingMap.entrySet()) {
                 ((SerializableMutableStorageRecord)entry.getValue()).setExpiration(getSystemExpiration(expiration));
                 backingMap.set((String)entry.getKey(), (SerializableMutableStorageRecord)entry.getValue());
