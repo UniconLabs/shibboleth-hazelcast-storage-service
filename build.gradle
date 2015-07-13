@@ -1,0 +1,74 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'distribution'
+}
+
+configurations {
+    provided
+    compile.extendsFrom provided
+}
+
+sourceSets {
+    main {
+        compileClasspath += [configurations.provided]
+    }
+}
+
+repositories {
+    maven { url 'https://build.shibboleth.net/nexus/content/groups/public' }
+    jcenter()
+}
+
+dependencies {
+    provided "org.opensaml:opensaml-storage-api:${project.'shibboleth.version'}"
+
+    compile "com.hazelcast:hazelcast-all:${project.'hazelcast.version'}"
+}
+
+distributions {
+    main {
+        contents {
+            duplicatesStrategy = 'exclude'
+
+            into ('edit-webapp/WEB-INF/lib') {
+                from {project.configurations.compile - project.configurations.provided}
+            }
+        }
+    }
+}
+
+task deploy {
+    if (project.hasProperty('idp.home')) {
+        // outputs.dir new File(project.'idp.home')
+        outputs.upToDateWhen { false }
+        dependsOn jar
+        doLast {
+            println "we're deploying to ${project.'idp.home'}"
+            copy {
+                from {project.configurations.compile - project.configurations.provided}
+                into new File("${project.'idp.home'}/edit-webapp/WEB-INF/lib")
+            }
+            copy {
+                from jar.outputs
+                into new File("${project.'idp.home'}/edit-webapp/WEB-INF/lib")
+            }
+            exec {
+                executable "${project.'idp.home'}/bin/build.sh"
+                args "-Didp.target.dir=${project.'idp.home'}"
+            }
+        }
+    } else {
+        println "no 'idp.home' set"
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = 2.4
+}
+
+idea {
+    module {
+        scopes.PROVIDED.plus += [configurations.provided]
+    }
+}
