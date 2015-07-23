@@ -38,6 +38,12 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
         this(Hazelcast.newHazelcastInstance());
     }
 
+    @Override
+    protected void doDestroy() {
+        this.hazelcastInstance.shutdown();
+        super.doDestroy();
+    }
+
     private long getSystemExpiration(Long expiration) {
         return expiration == 0 ? 0 : expiration - System.currentTimeMillis();
     }
