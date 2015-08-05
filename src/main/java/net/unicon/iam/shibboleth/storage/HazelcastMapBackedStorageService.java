@@ -3,6 +3,9 @@ package net.unicon.iam.shibboleth.storage;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import net.shibboleth.utilities.java.support.collection.Pair;
 import org.opensaml.storage.AbstractStorageService;
 import org.opensaml.storage.MutableStorageRecord;
@@ -57,7 +60,7 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
         if (backingMap.containsKey(key)) {
             return false;
         }
-        StorageRecord storageRecord = new SerializableMutableStorageRecord(value, expiration);
+        StorageRecord storageRecord = new MutableStorageRecord(value, expiration);
         if (expiration != null) {
             backingMap.put(key, storageRecord, getSystemExpiration(expiration), TimeUnit.MILLISECONDS);
         } else {
@@ -102,7 +105,7 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
             if (!backingMap.containsKey(key)) {
                 return false;
             }
-            SerializableMutableStorageRecord record = (SerializableMutableStorageRecord) backingMap.get(key);
+            MutableStorageRecord record = (MutableStorageRecord) backingMap.get(key);
             if (value != null) {
                 record.setValue(value);
                 record.incrementVersion();
@@ -128,7 +131,7 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
             if (!backingMap.containsKey(key)) {
                 return null;
             }
-            SerializableMutableStorageRecord record = (SerializableMutableStorageRecord) backingMap.get(key);
+            MutableStorageRecord record = (MutableStorageRecord) backingMap.get(key);
             if (version != record.getVersion()) {
                 throw new VersionMismatchException();
             }
@@ -156,7 +159,7 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
             if (!backingMap.containsKey(key)) {
                 return false;
             }
-            SerializableMutableStorageRecord record = (SerializableMutableStorageRecord) backingMap.get(key);
+            MutableStorageRecord record = (MutableStorageRecord) backingMap.get(key);
             record.setExpiration(expiration);
             backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
             return true;
@@ -214,8 +217,8 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
         lock.lock();
         try {
             for (Map.Entry entry: backingMap.entrySet()) {
-                ((SerializableMutableStorageRecord)entry.getValue()).setExpiration(getSystemExpiration(expiration));
-                backingMap.set((String)entry.getKey(), (SerializableMutableStorageRecord)entry.getValue());
+                ((MutableStorageRecord)entry.getValue()).setExpiration(getSystemExpiration(expiration));
+                backingMap.set((String)entry.getKey(), (MutableStorageRecord)entry.getValue());
             }
         } finally {
             lock.unlock();
@@ -241,9 +244,10 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
         };
     }
 
-    public static class SerializableMutableStorageRecord extends MutableStorageRecord implements Serializable {
-        public SerializableMutableStorageRecord(@Nonnull String val, @Nullable Long exp) {
-            super(val, exp);
+    public static class VersionMutableStorageRecord extends MutableStorageRecord {
+        public VersionMutableStorageRecord(String value, Long expiration, Long version) {
+            super(value, expiration);
+            super.setVersion(version);
         }
     }
 }
