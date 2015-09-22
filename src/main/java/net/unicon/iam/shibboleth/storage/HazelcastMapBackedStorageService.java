@@ -1,11 +1,13 @@
 package net.unicon.iam.shibboleth.storage;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import net.shibboleth.utilities.java.support.collection.Pair;
 import org.opensaml.storage.AbstractStorageService;
 import org.opensaml.storage.MutableStorageRecord;
@@ -15,8 +17,6 @@ import org.opensaml.storage.VersionMismatchException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collection;
 import java.util.Map;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -31,14 +31,39 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
 
     public HazelcastMapBackedStorageService(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
+        setupSerialization();
 
         this.setContextSize(Integer.MAX_VALUE);
         this.setKeySize(Integer.MAX_VALUE);
         this.setValueSize(Integer.MAX_VALUE);
     }
 
+    private void setupSerialization() {
+        // set up the serializer for the storage record if not already configured
+        SerializationService serializationService;
+        if (this.hazelcastInstance instanceof HazelcastInstanceImpl) {
+            serializationService = ((HazelcastInstanceImpl)this.hazelcastInstance).getSerializationService();
+        } else if (this.hazelcastInstance instanceof SerializationServiceSupport) {
+            serializationService = ((SerializationServiceSupport)this.hazelcastInstance).getSerializationService();
+        } else {
+            serializationService = null;
+        }
+        if (serializationService != null) {
+            serializationService.register(MutableStorageRecord.class, new MutableStorageRecordSerializer());
+        }
+    }
+
     public HazelcastMapBackedStorageService() {
-        this(Hazelcast.newHazelcastInstance());
+        this(Hazelcast.newHazelcastInstance(getConfig()));
+    }
+
+    private static Config getConfig() {
+        Config config = new Config();
+
+        SerializerConfig serializerConfig = new SerializerConfig().setImplementation(new MutableStorageRecordSerializer()).setTypeClass(MutableStorageRecord.class);
+        config.getSerializationConfig().addSerializerConfig(serializerConfig);
+
+        return config;
     }
 
     @Override
