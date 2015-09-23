@@ -13,16 +13,23 @@ public class MutableStorageRecordSerializer implements StreamSerializer<MutableS
     public void write(ObjectDataOutput out, MutableStorageRecord object) throws IOException {
         out.writeLong(object.getVersion());
         out.writeUTF(object.getValue());
-        out.writeLong(object.getExpiration());
+
+        if (object.getExpiration() != null) {
+            out.writeLong(object.getExpiration());
+        } else {
+            out.writeLong(-1);
+        }
     }
 
     @Override
     public MutableStorageRecord read(ObjectDataInput in) throws IOException {
         long version = in.readLong();
         String value  = in.readUTF();
-        long expiration = in.readLong();
-        MutableStorageRecord mutableStorageRecord = new HazelcastMapBackedStorageService.VersionMutableStorageRecord(value, expiration, version);
-        return mutableStorageRecord;
+        Long expiration = in.readLong();
+        if (expiration == -1) {
+            expiration = null;
+        }
+        return new HazelcastMapBackedStorageService.VersionMutableStorageRecord(value, expiration, version);
     }
 
     @Override

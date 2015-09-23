@@ -8,6 +8,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import net.shibboleth.utilities.java.support.annotation.constraint.NotEmpty;
+import net.shibboleth.utilities.java.support.annotation.constraint.Positive;
 import net.shibboleth.utilities.java.support.collection.Pair;
 import org.opensaml.storage.AbstractStorageService;
 import org.opensaml.storage.MutableStorageRecord;
@@ -80,8 +82,8 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
      * {@inheritDoc}
      */
     @Override
-    public boolean create(String context, String key, String value, Long expiration) throws IOException {
-        IMap backingMap = hazelcastInstance.getMap(context);
+    public boolean create(@Nonnull @NotEmpty final String context, @Nonnull @NotEmpty final String key, @Nonnull @NotEmpty final String value, @Nullable @Positive final Long expiration) throws IOException {
+        IMap<String, StorageRecord> backingMap = hazelcastInstance.getMap(context);
         if (backingMap.containsKey(key)) {
             return false;
         }
@@ -99,7 +101,7 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
      */
     @Nullable
     @Override
-    public StorageRecord read(String context, String key) throws IOException {
+    public StorageRecord read(@Nonnull @NotEmpty final String context, @Nonnull @NotEmpty final String key) throws IOException {
         IMap backingMap = hazelcastInstance.getMap(context);
         return (StorageRecord) backingMap.get(key);
     }
@@ -109,7 +111,7 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
      */
     @Nonnull
     @Override
-    public Pair<Long, StorageRecord> read(String context, String key, long version) throws IOException {
+    public Pair<Long, StorageRecord> read(@Nonnull @NotEmpty final String context, @Nonnull @NotEmpty final String key, @Positive final long version) throws IOException {
         IMap<String, StorageRecord> backingMap = hazelcastInstance.getMap(context);
         StorageRecord storageRecord = backingMap.get(key);
         if (version == storageRecord.getVersion()) {
@@ -122,7 +124,7 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
      * {@inheritDoc}
      */
     @Override
-    public boolean update(@Nonnull String context, @Nonnull String key, @Nonnull String value, @Nullable Long expiration) throws IOException {
+    public boolean update(@Nonnull @NotEmpty final String context, @Nonnull @NotEmpty final String key, @Nonnull @NotEmpty final String value, @Nullable @Positive final Long expiration) throws IOException {
         IMap<String, StorageRecord> backingMap = hazelcastInstance.getMap(context);
         final Lock lock = hazelcastInstance.getLock(context + ":" + key);
         lock.lock();
@@ -131,10 +133,10 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
                 return false;
             }
             MutableStorageRecord record = (MutableStorageRecord) backingMap.get(key);
-            if (value != null) {
-                record.setValue(value);
-                record.incrementVersion();
-            }
+
+            record.setValue(value);
+            record.incrementVersion();
+
             record.setExpiration(getSystemExpiration(expiration));
             backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
             return true;
@@ -148,7 +150,7 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
      */
     @Nullable
     @Override
-    public Long updateWithVersion(long version, @Nonnull String context, @Nonnull String key, @Nonnull String value, @Nullable Long expiration) throws IOException, VersionMismatchException {
+    public Long updateWithVersion(@Positive long version, @Nonnull @NotEmpty final String context, @Nonnull @NotEmpty final String key, @Nonnull @NotEmpty final String value, @Nullable @Positive final Long expiration) throws IOException, VersionMismatchException {
         IMap<String, StorageRecord> backingMap = hazelcastInstance.getMap(context);
         final Lock lock = hazelcastInstance.getLock(context + ":" + key);
         lock.lock();
@@ -160,10 +162,10 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
             if (version != record.getVersion()) {
                 throw new VersionMismatchException();
             }
-            if (value != null) {
-                record.setValue(value);
-                record.incrementVersion();
-            }
+
+            record.setValue(value);
+            record.incrementVersion();
+
             record.setExpiration(expiration);
             backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
             return record.getVersion();
