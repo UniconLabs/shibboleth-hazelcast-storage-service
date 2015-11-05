@@ -22,6 +22,7 @@ repositories {
 
 dependencies {
     provided "org.opensaml:opensaml-storage-api:${project.'shibboleth.version'}"
+    provided "ch.qos.logback:logback-core:${project.'logback.version'}"
 
     compile "com.hazelcast:hazelcast-all:${project.'hazelcast.version'}"
 }

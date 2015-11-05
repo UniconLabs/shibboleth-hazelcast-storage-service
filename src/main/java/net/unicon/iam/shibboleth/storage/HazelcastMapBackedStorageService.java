@@ -15,6 +15,8 @@ import org.opensaml.storage.AbstractStorageService;
 import org.opensaml.storage.MutableStorageRecord;
 import org.opensaml.storage.StorageRecord;
 import org.opensaml.storage.VersionMismatchException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,6 +31,8 @@ import java.util.concurrent.locks.Lock;
  * Hazelcast for storage.
  */
 public class HazelcastMapBackedStorageService extends AbstractStorageService {
+    private static final Logger logger = LoggerFactory.getLogger(HazelcastMapBackedStorageService.class);
+
     private final HazelcastInstance hazelcastInstance;
 
     public HazelcastMapBackedStorageService(HazelcastInstance hazelcastInstance) {
@@ -51,7 +55,11 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
             serializationService = null;
         }
         if (serializationService != null) {
-            serializationService.register(MutableStorageRecord.class, new MutableStorageRecordSerializer());
+            try {
+                serializationService.register(MutableStorageRecord.class, new MutableStorageRecordSerializer());
+            } catch (IllegalStateException e) {
+                logger.warn("Problem registering storage record serializer", e);
+            }
         }
     }
 
