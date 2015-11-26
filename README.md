@@ -77,3 +77,14 @@ In `idp.properties`, set each of the storage services you want to use Hazelcast 
 * idp.consent.StorageService
 * idp.replayCache.StorageService
 * idp.artifact.StorageService
+
+## Licensing
+
+Licenced under the terms of the Apache License, v2. Please see [LICENSE](LICENSE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0) for more information.
+
+## Acknowledgements
+
+This library was developed in cooperation with:
+
+* Portland State University
+* Unicon Open Source Support Subscribers
