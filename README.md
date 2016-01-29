@@ -10,7 +10,7 @@ Currently, there are no binary distributions available and one must build from s
 
 1. `git clone https://github.com/UniconLabs/shibboleth-hazelcast-storage-service.git`
 1. `cd shibboleth-hazelcast-storage-service`
-1. `git clean build`
+1. `./gradlew clean build`
 
 This will create 2 files in `build/distributions`: a zip file and a tar file. Unpackage one appropriate for your platform
 and you should find an `edit-webapp` directory. Place the files in this new directory in the appropriate `edit-webapp`
