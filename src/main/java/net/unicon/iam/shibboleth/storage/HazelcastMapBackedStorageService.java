@@ -7,6 +7,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import net.shibboleth.utilities.java.support.annotation.constraint.NotEmpty;
 import net.shibboleth.utilities.java.support.annotation.constraint.Positive;
@@ -22,6 +23,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -34,9 +36,13 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
     private static final Logger logger = LoggerFactory.getLogger(HazelcastMapBackedStorageService.class);
 
     private final HazelcastInstance hazelcastInstance;
+    private static final int DEFAULT_PAGE_SIZE = 100;
+    private final int pageSize;
 
-    public HazelcastMapBackedStorageService(HazelcastInstance hazelcastInstance) {
+    public HazelcastMapBackedStorageService(HazelcastInstance hazelcastInstance, int pageSize) {
         this.hazelcastInstance = hazelcastInstance;
+        this.pageSize = pageSize;
+
         setupSerialization();
 
         this.setContextSize(Integer.MAX_VALUE);
@@ -64,7 +70,15 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
     }
 
     public HazelcastMapBackedStorageService() {
-        this(Hazelcast.newHazelcastInstance(getConfig()));
+        this(Hazelcast.newHazelcastInstance(getConfig()), DEFAULT_PAGE_SIZE);
+    }
+
+    public HazelcastMapBackedStorageService(HazelcastInstance hazelcastInstance) {
+        this(hazelcastInstance, DEFAULT_PAGE_SIZE);
+    }
+
+    public HazelcastMapBackedStorageService(int pageSize) {
+        this(Hazelcast.newHazelcastInstance(getConfig()), pageSize);
     }
 
     private static Config getConfig() {
@@ -111,7 +125,8 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
     @Override
     public StorageRecord read(@Nonnull @NotEmpty final String context, @Nonnull @NotEmpty final String key) throws IOException {
         IMap backingMap = hazelcastInstance.getMap(context);
-        return (StorageRecord) backingMap.get(key);
+        StorageRecord storageRecord = (StorageRecord) backingMap.get(key);
+        return storageRecord;
     }
 
     /**
@@ -145,7 +160,7 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
             record.setValue(value);
             record.incrementVersion();
 
-            record.setExpiration(getSystemExpiration(expiration));
+            record.setExpiration(expiration);
             backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
             return true;
         } finally {
@@ -251,9 +266,14 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
         final Lock lock = hazelcastInstance.getLock(context);
         lock.lock();
         try {
-            for (Map.Entry entry: backingMap.entrySet()) {
-                ((MutableStorageRecord)entry.getValue()).setExpiration(getSystemExpiration(expiration));
-                backingMap.set((String)entry.getKey(), (MutableStorageRecord)entry.getValue());
+            PagingPredicate pagingPredicate = new PagingPredicate(this.pageSize);
+            for (Set<Map.Entry<String, StorageRecord>> entrySet = backingMap.entrySet(pagingPredicate);
+                 !entrySet.isEmpty();
+                 pagingPredicate.nextPage(), entrySet = backingMap.entrySet()) {
+                for (Map.Entry entry : entrySet) {
+                    ((MutableStorageRecord) entry.getValue()).setExpiration(getSystemExpiration(expiration));
+                    backingMap.set((String) entry.getKey(), (MutableStorageRecord) entry.getValue());
+                }
             }
         } finally {
             lock.unlock();
