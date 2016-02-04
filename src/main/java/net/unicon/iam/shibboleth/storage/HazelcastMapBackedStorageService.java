@@ -125,7 +125,8 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
     @Override
     public StorageRecord read(@Nonnull @NotEmpty final String context, @Nonnull @NotEmpty final String key) throws IOException {
         IMap backingMap = hazelcastInstance.getMap(context);
-        return (StorageRecord) backingMap.get(key);
+        StorageRecord storageRecord = (StorageRecord) backingMap.get(key);
+        return storageRecord;
     }
 
     /**
@@ -159,7 +160,7 @@ public class HazelcastMapBackedStorageService extends AbstractStorageService {
             record.setValue(value);
             record.incrementVersion();
 
-            record.setExpiration(getSystemExpiration(expiration));
+            record.setExpiration(expiration);
             backingMap.put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
             return true;
         } finally {
