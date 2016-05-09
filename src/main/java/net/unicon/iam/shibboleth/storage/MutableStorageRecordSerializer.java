@@ -29,12 +29,12 @@ public class MutableStorageRecordSerializer implements StreamSerializer<MutableS
         if (expiration == -1) {
             expiration = null;
         }
-        return new HazelcastMapBackedStorageService.VersionMutableStorageRecord(value, expiration, version);
+        return new VersionMutableStorageRecord(value, expiration, version);
     }
 
     @Override
     public int getTypeId() {
-        return 1234;
+        return 12345;
     }
 
     @Override
