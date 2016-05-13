@@ -93,7 +93,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
         if (version != null && version == storageRecord.getVersion()) {
             return new Pair<>(version, null);
         }
-        return new Pair<>(version, storageRecord);
+        return new Pair<>(storageRecord.getVersion(), storageRecord);
     }
 
     /**
