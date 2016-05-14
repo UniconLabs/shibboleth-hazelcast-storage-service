@@ -61,7 +61,9 @@ public class SingleHazelcastMapBackedStorageService extends AbstractHazelcastMap
     public void deleteContext(@Nonnull @NotEmpty String context) throws IOException {
         IMap backingMap = this.getMap(context, null);
         Set keySet = this.getContextKeySet(context);
-        keySet.forEach(backingMap::delete);
+        for (Object o : keySet) {
+            backingMap.delete(o);
+        }
     }
 
     public static class CompositeKey implements Serializable {
