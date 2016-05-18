@@ -4,6 +4,8 @@ plugins {
     id 'distribution'
 }
 
+apply from: 'gradle/shibboleth.gradle'
+
 configurations {
     provided
     compile.extendsFrom provided
@@ -25,6 +27,7 @@ dependencies {
     provided "ch.qos.logback:logback-core:${project.'logback.version'}"
 
     compile "com.hazelcast:hazelcast-all:${project.'hazelcast.version'}"
+    testCompile "net.shibboleth.idp:idp-authn-api:${project.'shibboleth.version'}"
 }
 
 distributions {
@@ -36,31 +39,6 @@ distributions {
                 from {project.configurations.compile - project.configurations.provided}
             }
         }
-    }
-}
-
-task deploy {
-    if (project.hasProperty('idp.home')) {
-        // outputs.dir new File(project.'idp.home')
-        outputs.upToDateWhen { false }
-        dependsOn jar
-        doLast {
-            println "we're deploying to ${project.'idp.home'}"
-            copy {
-                from {project.configurations.compile - project.configurations.provided}
-                into new File("${project.'idp.home'}/edit-webapp/WEB-INF/lib")
-            }
-            copy {
-                from jar.outputs
-                into new File("${project.'idp.home'}/edit-webapp/WEB-INF/lib")
-            }
-            exec {
-                executable "${project.'idp.home'}/bin/build.sh"
-                args "-Didp.target.dir=${project.'idp.home'}"
-            }
-        }
-    } else {
-        println "no 'idp.home' set"
     }
 }
 

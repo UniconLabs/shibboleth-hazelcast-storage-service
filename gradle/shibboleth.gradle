@@ -1,0 +1,254 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath "commons-configuration:commons-configuration:1.10"
+    }
+}
+
+
+configurations {
+    shibboleth
+    shibbolethAntTasks
+}
+
+repositories {
+    jcenter()
+    maven { url 'https://build.shibboleth.net/nexus/content/groups/public' }
+}
+
+dependencies {
+    shibboleth "net.shibboleth.idp:idp-distribution:${project.'shibboleth.version'}@tar.gz"
+
+    shibbolethAntTasks "net.shibboleth.idp:idp-installer:${project.'shibboleth.version'}"
+    shibbolethAntTasks "org.bouncycastle:bcpkix-jdk15on:1.53"
+}
+
+task unpackShibboleth {
+    inputs.file configurations.shibboleth[0]
+    outputs.dir new File(temporaryDir, "shibboleth-idp")
+    doLast {
+        copy {
+            from tarTree(resources.gzip(configurations.shibboleth[0]))
+            into temporaryDir
+        }
+        file("${temporaryDir}/shibboleth-idp").with {
+            if (it.exists()) {
+                delete it
+            }
+        }
+        project.file("${temporaryDir}/shibboleth-identity-provider-${project.'shibboleth.version'}").renameTo(new File(temporaryDir, 'shibboleth-idp'))
+        // temporaryDir.listFiles().find {it.isDirectory()}.renameTo(new File(temporaryDir, 'shibboleth-idp'))
+    }
+}
+
+task testJar(type: Jar) {
+    classifier = 'tests'
+    from sourceSets.test.output
+}
+
+task overlay(dependsOn: ['jar', 'testJar', 'unpackShibboleth', 'processIdpProperties', 'generateSealerKey', 'generateSelfSignedCerts', 'generateMetadata']) {
+    inputs.dir file('build/overlay')
+    inputs.dir file('src/main/overlay')
+    inputs.dir file('src/test/overlay')
+
+    outputs.dir file("${unpackShibboleth.outputs.files[0]}")
+    doLast {
+        copy {
+            from project.jar
+            from (project.configurations.compile - project.configurations.provided)
+            from project.testJar
+            into file("${unpackShibboleth.outputs.files[0]}/webapp/WEB-INF/lib")
+        }
+        copy {
+            from fileTree("build/overlay")
+            into file("${unpackShibboleth.outputs.files[0]}")
+        }
+        ['main', 'test'].each { source ->
+            copy {
+                from fileTree("src/${source}/overlay")
+                into file("${unpackShibboleth.outputs.files[0]}")
+            }
+        }
+        copy {
+            from fileTree("src/main/overlay/edit-webapp")
+            into file("${unpackShibboleth.outputs.files[0]}/webapp")
+        }
+    }
+}
+
+// Work horse for copying overlay files if they exist in either the `main` or `test` trees. Currently, it prefers files
+// in the `test` tree
+def copyOverlayFile = { String relSrcFile ->
+    for (def path : ['src/test/overlay', 'src/main/overlay']) {
+        def tfile = new File(file(path), relSrcFile)
+        if (tfile.exists()) {
+            copy {
+                from tfile
+                into new File('build/overlay', file(path).toURI().relativize(tfile.parentFile.toURI()).toString())
+            }
+            return true
+        }
+    }
+    return false
+}
+
+task processIdpProperties(dependsOn: 'unpackShibboleth') {
+    ext.inputFile = "${unpackShibboleth.outputs.files[0]}/conf/idp.properties"
+    ext.outputFile = 'build/overlay/conf/idp.properties'
+    inputs.file inputFile
+    outputs.file outputFile
+    doLast {
+        def config = new org.apache.commons.configuration.PropertiesConfiguration()
+        def layout = new org.apache.commons.configuration.PropertiesConfigurationLayout(config)
+        layout.load(file(inputFile).newReader())
+        file('build/overlay/conf').mkdirs()
+        layout.save(file(outputFile).newWriter(true))
+    }
+}
+
+task generateSealerKey(dependsOn: 'processIdpProperties') {
+    ext.outputDir = file('build/overlay/credentials')
+    ext.sealerKeystore = file("${outputDir}/sealer.jks")
+    ext.sealerKeyVersion = file("${outputDir}/sealer.kver")
+
+    outputs.dir outputDir
+    outputs.file sealerKeystore
+    outputs.file sealerKeyVersion
+
+    inputs.files 'src/test/overlay/credentials/sealer.jks', 'src/test/overlay/credentials/sealer.kver'
+
+    doLast {
+        file("build/overlay/credentials").mkdirs()
+        if (!(copyOverlayFile('credentials/sealer.jks') && copyOverlayFile('credentials/sealer.kver'))) {
+            ant.taskdef(name: 'sealer', classname: 'net.shibboleth.idp.installer.ant.BasicKeystoreKeyStrategyTask', classpath: configurations.shibbolethAntTasks.asPath)
+            ant.sealer(
+                    keystoreFile: sealerKeystore,
+                    versionFile: sealerKeyVersion,
+                    keyAlias: 'secret',
+                    keystorePassword: 'password'
+            )
+        }
+    }
+}
+
+ant.taskdef(
+        name: 'selfsignedcert',
+        classname: 'net.shibboleth.idp.installer.ant.SelfSignedCertificateGeneratorTask',
+        classpath: configurations.shibbolethAntTasks.asPath
+)
+
+task generateSelfSignedCerts(dependsOn: 'processIdpProperties') {
+    ext.outputDir = file('build/overlay/credentials')
+
+    outputs.dir outputDir
+    outputs.files(
+            "${outputDir}/idp-signing.key", "${outputDir}/idp-signing.crt",
+            "${outputDir}/idp-encryption.key", "${outputDir}/idp-encryption.crt",
+            "${outputDir}/idp-backchannel.p12", "${outputDir}/idp-backchannel.crt"
+    )
+
+    inputs.files 'src/test/overlay/credentials/idp-signing.key', 'src/test/overlay/credentials/idp-signing.crt'
+    inputs.files 'src/test/overlay/credentials/idp-encryption.key', 'src/test/overlay/credentials/idp-encryption.crt'
+    inputs.files 'src/test/overlay/credentials/idp-backchannel.p12', 'src/test/overlay/credentials/idp-backchannel.crt'
+
+    doLast {
+        outputDir.mkdirs()
+
+        if (!(copyOverlayFile('credentials/idp-signing.key') && copyOverlayFile('credentials/idp-signing.crt'))) {
+            ant.selfsignedcert(
+                    hostname: 'localhost',
+                    privateKeyFile: "${outputDir}/idp-signing.key",
+                    certificateFile: "${outputDir}/idp-signing.crt",
+                    uriSubjectAltNames: "localhost"
+            )
+        }
+        if (!(copyOverlayFile('credentials/idp-encryption.key') && copyOverlayFile('credentials/idp-encryption.crt'))) {
+            ant.selfsignedcert(
+                    hostname: 'localhost',
+                    privateKeyFile: "${outputDir}/idp-encryption.key",
+                    certificateFile: "${outputDir}/idp-encryption.crt",
+                    uriSubjectAltNames: "localhost"
+            )
+        }
+        if (!(copyOverlayFile('credentials/idp-backchannel.p12') && copyOverlayFile('credentials/idp-backchannel.crt'))) {
+            ant.selfsignedcert(
+                    hostname: 'localhost',
+                    keystoreFile: "${outputDir}/idp-backchannel.p12",
+                    certificateFile: "${outputDir}/idp-backchannel.crt",
+                    keystorePassword: 'password',
+                    uriSubjectAltNames: "localhost"
+            )
+        }
+    }
+}
+
+task generateMetadata(dependsOn: 'generateSelfSignedCerts') {
+    ext.outputFile = "build/overlay/metadata/idp-metadata.xml"
+    outputs.file outputFile
+
+    outputs.upToDateWhen { false }
+    doLast {
+        file('build/overlay/metadata').mkdirs()
+
+        def readCert = { File file ->
+            def stringWriter = new StringWriter()
+            boolean started = false
+            for (String line : file.newReader().lines()) {
+                if (line.startsWith('-----END CERTIFICATE-----')) {
+                    break
+                }
+                if (started) {
+                    stringWriter.write "${line}\n"
+                }
+                if (line.startsWith('-----BEGIN CERTIFICATE-----')) {
+                    started = true
+                }
+            }
+            stringWriter.toString()
+        }
+
+        def xml = new groovy.xml.StreamingMarkupBuilder().bind {
+            mkp.xmlDeclaration(version: '1.0', encoding: 'utf-8')
+            mkp.yield('\n')
+            mkp.declareNamespace('': 'urn:oasis:names:tc:SAML:2.0:metadata', 'ds': 'http://www.w3.org/2000/09/xmldsig#')
+            EntityDescriptor('entityID': 'https://idp.example.org') {
+                IDPSSODescriptor('protocolSupportEnumeration': 'urn:oasis:names:tc:SAML:2.0:protocol') {
+                    KeyDescriptor(use: 'signing') {
+                        'ds:KeyInfo' {
+                            'ds:X509Data' {
+                                'ds:X509Certificate' readCert(file('build/overlay/credentials/idp-backchannel.crt'))
+                            }
+                        }
+                    }
+                    KeyDescriptor(use: 'signing') {
+                        'ds:KeyInfo' {
+                            'ds:X509Data' {
+                                'ds:X509Certificate' readCert(file('build/overlay/credentials/idp-signing.crt'))
+                            }
+                        }
+                    }
+                    KeyDescriptor(use: 'encryption') {
+                        'ds:KeyInfo' {
+                            'ds:X509Data' {
+                                'ds:X509Certificate' readCert(file('build/overlay/credentials/idp-encryption.crt'))
+                            }
+                        }
+                    }
+                    SingleLogoutService(Binding: 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect', Location: 'https://localhost:8443/idp/profile/SAML2/Redirect/SLO')
+                    SingleLogoutService(Binding: 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST', Location: 'https://localhost:8443/idp/profile/SAML2/POST/SLO')
+                    SingleLogoutService(Binding: 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST-SimpleSign', Location: 'https://localhost:8443/idp/profile/SAML2/POST-SimpleSign/SLO')
+
+                    NameIDFormat('urn:oasis:names:tc:SAML:2.0:nameid-format:transient')
+
+                    SingleSignOnService(Binding: 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST', Location: 'https://localhost:8443/idp/profile/SAML2/POST/SSO')
+                    SingleSignOnService(Binding: 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST-SimpleSign', Location: 'https://localhost:8443/idp/profile/SAML2/POST-SimpleSign/SSO')
+                    SingleSignOnService(Binding: 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect', Location: 'https://localhost:8443/idp/profile/SAML2/Redirect/SSO')
+                }
+            }
+        }
+
+        file(outputFile).newOutputStream() << groovy.xml.XmlUtil.serialize(xml)
+    }
+}
