@@ -115,7 +115,6 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
     }
 
     private Long doUpdate(final Long version, final String context, final String key, final String value, final Long expiration) throws IOException, VersionMismatchException {
-        IMap<String, StorageRecord> backingMap = hazelcastInstance.getMap(context);
         final Lock lock = hazelcastInstance.getLock(context + ":" + key);
         lock.lock();
         try {
