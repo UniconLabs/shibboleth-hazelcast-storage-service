@@ -119,9 +119,13 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
         final Lock lock = hazelcastInstance.getLock(context + ":" + key);
         lock.lock();
         try {
-            MutableStorageRecord record = (MutableStorageRecord) this.doRead(context, key, version).getSecond();
+            MutableStorageRecord record = (MutableStorageRecord) this.doRead(context, key, null).getSecond();
             if (record == null) {
                 return null;
+            }
+
+            if (version != null && version != record.getVersion()) {
+                throw new VersionMismatchException();
             }
 
             if (value != null) {
@@ -130,7 +134,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
             }
 
             record.setExpiration(expiration);
-            this.getMap(context, key).put(key, record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
+            this.getMap(context, key).put(getKey(context, key), record, getSystemExpiration(record.getExpiration()), TimeUnit.MILLISECONDS);
             return record.getVersion();
         } finally {
             lock.unlock();
