@@ -61,7 +61,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
     }
 
     protected long getSystemExpiration(Long expiration) {
-        return expiration == 0 ? 0 : expiration - System.currentTimeMillis();
+        return (expiration == null || expiration == 0) ? 0 : expiration - System.currentTimeMillis();
     }
 
     /**

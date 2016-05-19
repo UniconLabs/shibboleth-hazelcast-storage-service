@@ -28,6 +28,9 @@ dependencies {
 
     compile "com.hazelcast:hazelcast-all:${project.'hazelcast.version'}"
     testCompile "net.shibboleth.idp:idp-authn-api:${project.'shibboleth.version'}"
+    testCompile "org.opensaml:opensaml-storage-api:${project.'opensaml.version'}:tests@jar"
+    testCompile "junit:junit:4.12"
+    testCompile "org.testng:testng:6.9.9"
 }
 
 distributions {
