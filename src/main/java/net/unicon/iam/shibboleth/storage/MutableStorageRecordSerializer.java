@@ -24,7 +24,7 @@ public class MutableStorageRecordSerializer implements StreamSerializer<MutableS
     @Override
     public MutableStorageRecord read(ObjectDataInput in) throws IOException {
         long version = in.readLong();
-        String value  = in.readUTF();
+        String value = in.readUTF();
         Long expiration = in.readLong();
         if (expiration == -1) {
             expiration = null;

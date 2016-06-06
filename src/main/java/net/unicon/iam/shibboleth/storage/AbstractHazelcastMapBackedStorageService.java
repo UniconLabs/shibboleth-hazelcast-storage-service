@@ -9,7 +9,10 @@ import com.hazelcast.spi.impl.SerializationServiceSupport;
 import net.shibboleth.utilities.java.support.annotation.constraint.NotEmpty;
 import net.shibboleth.utilities.java.support.annotation.constraint.Positive;
 import net.shibboleth.utilities.java.support.collection.Pair;
-import org.opensaml.storage.*;
+import org.opensaml.storage.AbstractStorageService;
+import org.opensaml.storage.MutableStorageRecord;
+import org.opensaml.storage.StorageRecord;
+import org.opensaml.storage.VersionMismatchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,15 +48,15 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
         // set up the serializer for the storage record if not already configured
         SerializationService serializationService;
         if (this.hazelcastInstance instanceof HazelcastInstanceImpl) {
-            serializationService = ((HazelcastInstanceImpl)this.hazelcastInstance).getSerializationService();
+            serializationService = ((HazelcastInstanceImpl) this.hazelcastInstance).getSerializationService();
         } else if (this.hazelcastInstance instanceof SerializationServiceSupport) {
-            serializationService = ((SerializationServiceSupport)this.hazelcastInstance).getSerializationService();
+            serializationService = ((SerializationServiceSupport) this.hazelcastInstance).getSerializationService();
         } else {
             serializationService = null;
         }
         if (serializationService != null) {
             try {
-                ((AbstractSerializationService)serializationService).register(MutableStorageRecord.class, new MutableStorageRecordSerializer());
+                ((AbstractSerializationService) serializationService).register(MutableStorageRecord.class, new MutableStorageRecordSerializer());
             } catch (IllegalStateException e) {
                 logger.warn("Problem registering storage record serializer", e);
             }
@@ -69,7 +72,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
      */
     @Override
     public boolean create(@Nonnull @NotEmpty String context, @Nonnull @NotEmpty String key, @Nonnull String value, @Nullable @Positive Long expiration) throws IOException {
-        IMap backingMap = getMap(context, key);
+        IMap<Object, StorageRecord> backingMap = getMap(context, key);
         Object ikey = getKey(context, key);
         if (backingMap.containsKey(ikey)) {
             return false;
@@ -179,7 +182,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
         if (!backingMap.containsKey(ikey)) {
             return false;
         }
-        if (version != null && ((StorageRecord)backingMap.get(ikey)).getVersion() != version) {
+        if (version != null && ((StorageRecord) backingMap.get(ikey)).getVersion() != version) {
             throw new VersionMismatchException();
         }
         backingMap.delete(ikey);
@@ -208,7 +211,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * The Hazelcast implementation is a noop and is handled by hazelcast
      */
     @Override
@@ -222,5 +225,6 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
     }
 
     protected abstract IMap<Object, StorageRecord> getMap(String context, String key);
+
     protected abstract Object getKey(String context, String key);
 }

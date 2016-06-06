@@ -6,13 +6,13 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 
-public abstract class HazelcastStorageServiceTest  extends StorageServiceTest {
+public abstract class HazelcastStorageServiceTest extends StorageServiceTest {
 
     @Test
     public void testUpdateContextExpiration() throws IOException {
         String context = "testContext";
 
-        for (int i = 0; i < 10 ; i++) {
+        for (int i = 0; i < 10; i++) {
             this.shared.create(context, Integer.toString(i), Integer.toString(i), System.currentTimeMillis() + 500000);
         }
 

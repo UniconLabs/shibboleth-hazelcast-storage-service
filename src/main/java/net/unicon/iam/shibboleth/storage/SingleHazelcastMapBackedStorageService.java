@@ -50,9 +50,8 @@ public class SingleHazelcastMapBackedStorageService extends AbstractHazelcastMap
 
     @Override
     public void updateContextExpiration(@Nonnull @NotEmpty String context, @Nullable Long expiration) throws IOException {
-        IMap backingMap = this.getMap(context, null);
-        for (Object key: this.getContextKeySet(context)) {
-            this.updateExpiration(((CompositeKey)key).getContext(), ((CompositeKey)key).getKey(), expiration);
+        for (Object key : this.getContextKeySet(context)) {
+            this.updateExpiration(((CompositeKey) key).getContext(), ((CompositeKey) key).getKey(), expiration);
         }
 
     }
@@ -70,13 +69,18 @@ public class SingleHazelcastMapBackedStorageService extends AbstractHazelcastMap
         private final String context;
         private final String key;
 
-        public CompositeKey(final String context, final String key){
+        public CompositeKey(final String context, final String key) {
             this.context = context;
             this.key = key;
         }
 
-        public String getContext() { return this.context; }
-        public String getKey() { return this.key; }
+        public String getContext() {
+            return this.context;
+        }
+
+        public String getKey() {
+            return this.key;
+        }
 
         @Override
         public int hashCode() {
@@ -91,7 +95,7 @@ public class SingleHazelcastMapBackedStorageService extends AbstractHazelcastMap
             if (!(obj instanceof CompositeKey)) {
                 return false;
             }
-            CompositeKey that = (CompositeKey)obj;
+            CompositeKey that = (CompositeKey) obj;
             return this.context.equals(that.context) && this.key.equals(that.key);
         }
     }

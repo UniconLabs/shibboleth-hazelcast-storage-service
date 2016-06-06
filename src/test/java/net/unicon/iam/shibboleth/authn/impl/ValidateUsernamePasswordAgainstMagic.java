@@ -16,9 +16,10 @@ import javax.security.auth.Subject;
  * This is just a simple validation action that makes sure that the username equals the password. Great for testing. Of
  * course, this is not thread safe, for reasons.
  */
+@SuppressWarnings("unchecked")
 public class ValidateUsernamePasswordAgainstMagic extends AbstractValidationAction {
     private static final Logger logger = LoggerFactory.getLogger(ValidateUsernamePasswordAgainstMagic.class);
-    
+
     private UsernamePasswordContext usernamePasswordContext;
 
     @Override
@@ -27,19 +28,15 @@ public class ValidateUsernamePasswordAgainstMagic extends AbstractValidationActi
         if (usernamePasswordContext == null) {
             logger.info(getLogPrefix() + "No UsernamePasswordContext available within authentication context");
             handleError(profileRequestContext, authenticationContext, "NoCredentials", AuthnEventIds.NO_CREDENTIALS);
-            return;
         } else if (usernamePasswordContext.getUsername() == null || usernamePasswordContext.getUsername().equals("")) {
             logger.info(getLogPrefix() + "No username available within UsernamePasswordContext");
             handleError(profileRequestContext, authenticationContext, "NoCredentials", AuthnEventIds.NO_CREDENTIALS);
-            return;
         } else if (usernamePasswordContext.getPassword() == null || usernamePasswordContext.getPassword().equals("")) {
             logger.info(getLogPrefix() + "No password available witin UsernamePasswordContext");
             handleError(profileRequestContext, authenticationContext, "InvalidCredentials", AuthnEventIds.INVALID_CREDENTIALS);
-            return;
         } else if (!usernamePasswordContext.getUsername().equals(usernamePasswordContext.getPassword())) {
             logger.info(getLogPrefix() + "Login by " + usernamePasswordContext.getUsername() + " failed");
             handleError(profileRequestContext, authenticationContext, "InvalidCredentials", AuthnEventIds.INVALID_CREDENTIALS);
-            return;
         } else {
             logger.info(getLogPrefix() + "Login by " + usernamePasswordContext.getUsername() + " succeeded");
             buildAuthenticationResult(profileRequestContext, authenticationContext);

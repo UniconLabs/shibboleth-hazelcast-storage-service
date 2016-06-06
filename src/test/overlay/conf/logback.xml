@@ -5,36 +5,36 @@
     Variables for simplifying logging configuration.
     http://logback.qos.ch/manual/configuration.html#variableSubstitution
     -->
-    
-    <variable name="idp.logfiles" value="${idp.home}/logs" />
-    <variable name="idp.loghistory" value="180" />
-    
+
+    <variable name="idp.logfiles" value="${idp.home}/logs"/>
+    <variable name="idp.loghistory" value="180"/>
+
     <!-- Much higher performance if you operate on DEBUG. -->
     <!-- <variable name="idp.process.appender" value="ASYNC_PROCESS" /> -->
-    
+
     <!-- Logging level shortcuts. -->
-    <variable name="idp.loglevel.idp" value="INFO" />
-    <variable name="idp.loglevel.ldap" value="WARN" />
-    <variable name="idp.loglevel.messages" value="INFO" />
-    <variable name="idp.loglevel.encryption" value="INFO" />
-    <variable name="idp.loglevel.opensaml" value="INFO" />
-    <variable name="idp.loglevel.props" value="INFO" />
-    
+    <variable name="idp.loglevel.idp" value="INFO"/>
+    <variable name="idp.loglevel.ldap" value="WARN"/>
+    <variable name="idp.loglevel.messages" value="INFO"/>
+    <variable name="idp.loglevel.encryption" value="INFO"/>
+    <variable name="idp.loglevel.opensaml" value="INFO"/>
+    <variable name="idp.loglevel.props" value="INFO"/>
+
     <!-- Don't turn these up unless you want a *lot* of noise. -->
-    <variable name="idp.loglevel.spring" value="ERROR" />
-    <variable name="idp.loglevel.container" value="ERROR" />
-    <variable name="idp.loglevel.xmlsec" value="INFO" />
-    
+    <variable name="idp.loglevel.spring" value="ERROR"/>
+    <variable name="idp.loglevel.container" value="ERROR"/>
+    <variable name="idp.loglevel.xmlsec" value="INFO"/>
+
     <!-- Syslog address for F-TICKS (see FTICKSLoggingConfiguration). -->
-    <variable name="idp.fticks.loghost" value="localhost" />
-    <variable name="idp.fticks.logport" value="514" />
+    <variable name="idp.fticks.loghost" value="localhost"/>
+    <variable name="idp.fticks.logport" value="514"/>
 
     <!--
     If you want to use custom properties in this config file,
     we load the main property file for you.
     -->
-    <variable file="${idp.home}/conf/idp.properties" />
-    
+    <variable file="${idp.home}/conf/idp.properties"/>
+
     <!-- =========================================================== -->
     <!-- ============== Logging Categories and Levels ============== -->
     <!-- =========================================================== -->
@@ -44,22 +44,22 @@
 
     <!-- Logs OpenSAML, but not IdP, messages -->
     <logger name="org.opensaml.saml" level="${idp.loglevel.opensaml:-INFO}"/>
-    
+
     <!-- Logs LDAP related messages -->
     <logger name="org.ldaptive" level="${idp.loglevel.ldap:-WARN}"/>
-    
+
     <!-- Logs inbound and outbound protocols messages at DEBUG level -->
-    <logger name="PROTOCOL_MESSAGE" level="${idp.loglevel.messages:-INFO}" />
+    <logger name="PROTOCOL_MESSAGE" level="${idp.loglevel.messages:-INFO}"/>
 
     <!-- Logs unencrypted SAML at DEBUG level -->
-    <logger name="org.opensaml.saml.saml2.encryption.Encrypter" level="${idp.loglevel.encryption:-INFO}" />
+    <logger name="org.opensaml.saml.saml2.encryption.Encrypter" level="${idp.loglevel.encryption:-INFO}"/>
 
     <!-- Logs system properties during startup at DEBUG level -->
-    <logger name="net.shibboleth.idp.log.LogbackLoggingService" level="${idp.loglevel.props:-INFO}" />
+    <logger name="net.shibboleth.idp.log.LogbackLoggingService" level="${idp.loglevel.props:-INFO}"/>
 
     <!-- Especially chatty. -->
-    <logger name="net.shibboleth.idp.saml.attribute.mapping" level="INFO" />
-    <logger name="org.apache.xml.security" level="${idp.loglevel.xmlsec:-INFO}" />
+    <logger name="net.shibboleth.idp.saml.attribute.mapping" level="INFO"/>
+    <logger name="org.apache.xml.security" level="${idp.loglevel.xmlsec:-INFO}"/>
     <logger name="org.springframework" level="${idp.loglevel.spring:-ERROR}"/>
     <logger name="org.apache.catalina" level="${idp.loglevel.container:-ERROR}"/>
     <logger name="org.eclipse.jetty" level="${idp.loglevel.container:-ERROR}"/>
@@ -68,11 +68,11 @@
     <!-- =========================================================== -->
     <!-- ============== Low Level Details or Changes =============== -->
     <!-- =========================================================== -->
-    
+
     <!-- Process log. -->
     <appender name="IDP_PROCESS" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${idp.logfiles}/idp-process.log</File>
-        
+
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${idp.logfiles}/idp-process-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
             <maxHistory>${idp.loghistory:-180}</maxHistory>
@@ -85,7 +85,7 @@
     </appender>
 
     <appender name="ASYNC_PROCESS" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="IDP_PROCESS" />
+        <appender-ref ref="IDP_PROCESS"/>
         <discardingThreshold>0</discardingThreshold>
     </appender>
 
@@ -94,20 +94,20 @@
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>WARN</level>
         </filter>
-        
+
         <File>${idp.logfiles}/idp-warn.log</File>
-        
+
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${idp.logfiles}/idp-warn-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
             <maxHistory>${idp.loghistory:-180}</maxHistory>
         </rollingPolicy>
-        
+
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <charset>UTF-8</charset>
             <Pattern>%date{ISO8601} - %level [%logger:%line] - %msg%n%ex</Pattern>
         </encoder>
     </appender>
-    
+
     <!-- Audit log. -->
     <appender name="IDP_AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${idp.logfiles}/idp-audit.log</File>
@@ -122,7 +122,7 @@
             <Pattern>%msg%n</Pattern>
         </encoder>
     </appender>
-    
+
     <!-- Consent audit log. -->
     <appender name="IDP_CONSENT_AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${idp.logfiles}/idp-consent-audit.log</File>
@@ -157,10 +157,10 @@
     <logger name="Shibboleth-Consent-Audit" level="ALL">
         <appender-ref ref="${idp.consent.appender:-IDP_CONSENT_AUDIT}"/>
     </logger>
-    
+
     <root level="${idp.loglevel.root:-INFO}">
         <appender-ref ref="${idp.process.appender:-IDP_PROCESS}"/>
-        <appender-ref ref="${idp.warn.appender:-IDP_WARN}" />
+        <appender-ref ref="${idp.warn.appender:-IDP_WARN}"/>
     </root>
 
 </configuration>

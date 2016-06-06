@@ -4,7 +4,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.PagingPredicate;
 import net.shibboleth.utilities.java.support.annotation.constraint.NotEmpty;
-import org.opensaml.storage.MutableStorageRecord;
 import org.opensaml.storage.StorageRecord;
 
 import javax.annotation.Nonnull;
