@@ -49,10 +49,9 @@ public class HazelcastMapBackedStorageService extends AbstractHazelcastMapBacked
             PagingPredicate pagingPredicate = new PagingPredicate(this.pageSize);
             for (Set<Map.Entry<String, StorageRecord>> entrySet = backingMap.entrySet(pagingPredicate);
                  !entrySet.isEmpty();
-                 pagingPredicate.nextPage(), entrySet = backingMap.entrySet()) {
+                 pagingPredicate.nextPage(), entrySet = backingMap.entrySet(pagingPredicate)) {
                 for (Map.Entry entry : entrySet) {
-                    ((MutableStorageRecord) entry.getValue()).setExpiration(getSystemExpiration(expiration));
-                    backingMap.set((String) entry.getKey(), (MutableStorageRecord) entry.getValue());
+                    this.updateExpiration(context, (String) entry.getKey(), expiration);
                 }
             }
         } finally {

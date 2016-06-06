@@ -4,13 +4,12 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.opensaml.storage.StorageService;
-import org.opensaml.storage.StorageServiceTest;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
 import javax.annotation.Nonnull;
 
-public class SingleHazelcastMapBackedStorageServiceTest extends StorageServiceTest {
+public class SingleHazelcastMapBackedStorageServiceTest extends HazelcastStorageServiceTest {
     private SingleHazelcastMapBackedStorageService singleHazelcastMapBackedStorageService;
     private HazelcastInstance hazelcastInstance;
 
