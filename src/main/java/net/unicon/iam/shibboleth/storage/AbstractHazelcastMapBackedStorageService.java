@@ -117,7 +117,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
         return doRead(context, key, version);
     }
 
-    private Long doUpdate(final Long version, final String context, final String key, final String value, final Long expiration) throws IOException, VersionMismatchException {
+    private Long doUpdate(final Long version, final String context, final String key, final String value, final Long expiration) throws IOException {
         final Lock lock = hazelcastInstance.getLock(context + ":" + key);
         lock.lock();
         try {
@@ -127,7 +127,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
             }
 
             if (version != null && version != record.getVersion()) {
-                throw new VersionMismatchException();
+                throw new VersionMismatchWrapperException(new VersionMismatchException());
             }
 
             if (value != null) {
@@ -148,11 +148,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
      */
     @Override
     public boolean update(@Nonnull @NotEmpty final String context, @Nonnull @NotEmpty final String key, @Nonnull @NotEmpty final String value, @Nullable @Positive final Long expiration) throws IOException {
-        try {
-            return doUpdate(null, context, key, value, expiration) != null;
-        } catch (VersionMismatchException e) {
-            throw new RuntimeException(e);
-        }
+        return doUpdate(null, context, key, value, expiration) != null;
     }
 
     /**
@@ -161,7 +157,11 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
     @Nullable
     @Override
     public Long updateWithVersion(@Positive long version, @Nonnull @NotEmpty String context, @Nonnull @NotEmpty String key, @Nonnull String value, @Nullable @Positive Long expiration) throws IOException, VersionMismatchException {
-        return doUpdate(version, context, key, value, expiration);
+        try {
+            return doUpdate(version, context, key, value, expiration);
+        } catch (VersionMismatchWrapperException e) {
+            throw (VersionMismatchException)e.getCause();
+        }
     }
 
     /**
@@ -169,21 +169,17 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
      */
     @Override
     public boolean updateExpiration(@Nonnull String context, @Nonnull String key, @Nullable Long expiration) throws IOException {
-        try {
-            return doUpdate(null, context, key, null, expiration) != null;
-        } catch (VersionMismatchException e) {
-            throw new RuntimeException(e);
-        }
+        return doUpdate(null, context, key, null, expiration) != null;
     }
 
-    private boolean doDelete(Long version, String context, String key) throws IOException, VersionMismatchException {
+    private boolean doDelete(Long version, String context, String key) throws IOException {
         IMap backingMap = getMap(context, key);
         Object ikey = getKey(context, key);
         if (!backingMap.containsKey(ikey)) {
             return false;
         }
         if (version != null && ((StorageRecord) backingMap.get(ikey)).getVersion() != version) {
-            throw new VersionMismatchException();
+            throw new VersionMismatchWrapperException(new VersionMismatchException());
         }
         backingMap.delete(ikey);
         return true;
@@ -194,11 +190,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
      */
     @Override
     public boolean delete(@Nonnull String context, @Nonnull String key) throws IOException {
-        try {
-            return doDelete(null, context, key);
-        } catch (VersionMismatchException e) {
-            throw new RuntimeException(e);
-        }
+        return doDelete(null, context, key);
     }
 
     /**
@@ -206,7 +198,11 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
      */
     @Override
     public boolean deleteWithVersion(long version, @Nonnull String context, @Nonnull String key) throws IOException, VersionMismatchException {
-        return doDelete(version, context, key);
+        try {
+            return doDelete(version, context, key);
+        } catch (VersionMismatchWrapperException e) {
+            throw (VersionMismatchException)e.getCause();
+        }
     }
 
     /**
@@ -227,4 +223,10 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
     protected abstract IMap<Object, StorageRecord> getMap(String context, String key);
 
     protected abstract Object getKey(String context, String key);
+
+    public static class VersionMismatchWrapperException extends RuntimeException {
+        public VersionMismatchWrapperException(Throwable cause) {
+            super(cause);
+        }
+    }
 }
