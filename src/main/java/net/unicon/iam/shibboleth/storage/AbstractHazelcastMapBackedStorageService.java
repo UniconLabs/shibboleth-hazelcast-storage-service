@@ -26,22 +26,14 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
     private static final Logger logger = LoggerFactory.getLogger(AbstractHazelcastMapBackedStorageService.class);
     protected final HazelcastInstance hazelcastInstance;
 
-    private static final int DEFAULT_PAGE_SIZE = 100;
-    protected final int pageSize;
-
-    public AbstractHazelcastMapBackedStorageService(HazelcastInstance hazelcastInstance, int pageSize) {
+    public AbstractHazelcastMapBackedStorageService(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
-        this.pageSize = pageSize;
 
         setupSerialization();
 
         this.setContextSize(Integer.MAX_VALUE);
         this.setKeySize(Integer.MAX_VALUE);
         this.setValueSize(Integer.MAX_VALUE);
-    }
-
-    public AbstractHazelcastMapBackedStorageService(HazelcastInstance hazelcastInstance) {
-        this(hazelcastInstance, DEFAULT_PAGE_SIZE);
     }
 
     protected void setupSerialization() {

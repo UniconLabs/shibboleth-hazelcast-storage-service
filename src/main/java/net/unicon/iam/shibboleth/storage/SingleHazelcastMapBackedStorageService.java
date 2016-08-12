@@ -21,11 +21,6 @@ import java.util.Set;
 public class SingleHazelcastMapBackedStorageService extends AbstractHazelcastMapBackedStorageService {
     private final String mapName;
 
-    public SingleHazelcastMapBackedStorageService(String mapName, HazelcastInstance hazelcastInstance, int pageSize) {
-        super(hazelcastInstance, pageSize);
-        this.mapName = mapName;
-    }
-
     public SingleHazelcastMapBackedStorageService(String mapName, HazelcastInstance hazelcastInstance) {
         super(hazelcastInstance);
         this.mapName = mapName;

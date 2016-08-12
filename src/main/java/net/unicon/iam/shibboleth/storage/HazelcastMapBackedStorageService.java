@@ -18,12 +18,16 @@ import java.util.concurrent.locks.Lock;
  * Hazelcast for storage.
  */
 public class HazelcastMapBackedStorageService extends AbstractHazelcastMapBackedStorageService {
+    private static final int DEFAULT_PAGE_SIZE = 100;
+    protected final int pageSize;
+
     public HazelcastMapBackedStorageService(HazelcastInstance hazelcastInstance, int pageSize) {
-        super(hazelcastInstance, pageSize);
+        super(hazelcastInstance);
+        this.pageSize = pageSize;
     }
 
     public HazelcastMapBackedStorageService(HazelcastInstance hazelcastInstance) {
-        super(hazelcastInstance);
+        this(hazelcastInstance, DEFAULT_PAGE_SIZE);
     }
 
     @Override
