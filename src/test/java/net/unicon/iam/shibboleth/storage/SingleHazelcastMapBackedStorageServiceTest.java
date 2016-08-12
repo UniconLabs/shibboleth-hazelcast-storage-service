@@ -6,6 +6,7 @@ import net.shibboleth.utilities.java.support.component.ComponentInitializationEx
 import org.opensaml.storage.StorageService;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import javax.annotation.Nonnull;
 
@@ -33,5 +34,18 @@ public class SingleHazelcastMapBackedStorageServiceTest extends HazelcastStorage
     @Override
     protected StorageService getStorageService() {
         return singleHazelcastMapBackedStorageService;
+    }
+
+    @Test
+    public void compositeKeyTest() {
+        SingleHazelcastMapBackedStorageService.CompositeKey key1 = new SingleHazelcastMapBackedStorageService.CompositeKey("here", "there");
+        SingleHazelcastMapBackedStorageService.CompositeKey key2 = new SingleHazelcastMapBackedStorageService.CompositeKey("here", "there");
+        SingleHazelcastMapBackedStorageService.CompositeKey key3 = new SingleHazelcastMapBackedStorageService.CompositeKey("now", "then");
+
+        assert key1.equals(key1);
+        assert !key1.equals("someString");
+        assert key1.equals(key2);
+        assert !key1.equals(key3);
+        assert key1.hashCode() == key2.hashCode();
     }
 }
