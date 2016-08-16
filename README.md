@@ -21,7 +21,6 @@ for your IdP. Rebuild and redeploy the `idp.war` file.
 In `global.xml`:
 
 ```
-<!--
 <bean id="hazelcast" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance">
     <constructor-arg name="config">
         <bean class="com.hazelcast.config.Config">
@@ -55,22 +54,37 @@ In `global.xml`:
         </bean>
     </property>
 </bean>
--->
 
-<bean id="shibboleth.HazelcastStorageService"
+<bean id="my.HazelcastStorageService"
       class="net.unicon.iam.shibboleth.storage.HazelcastMapBackedStorageService">
-    <!--
     <constructor-arg name="hazelcastInstance" ref="hazelcast" />
-    -->
+</bean>
+
+<bean id="my.StorageService.cas"
+        class="net.unicon.iam.shibboleth.storage.SingleHazelcastMapBackedStorageService">
+    <constructor-arg value="cas" />
+    <constructor-arg ref="hazelcast" />
+</bean>
+
+<bean id="my.StorageService.idpSession"
+      class="net.unicon.iam.shibboleth.storage.SingleHazelcastMapBackedStorageService">
+    <constructor-arg value="session" />
+    <constructor-arg ref="hazelcast" />
 </bean>
 ```
 
 Note that you can configure the `HazelcastInstance` in the Spring configuration file or use one of the other configuration
 methods.
 
+The above configuration shows two ways of using Hazelcast:
+
+1. `my.HazelcastStorageService` will dynamically create maps based upon the name of the context.
+1. `my.StorageService.cas` and `my.StorageService.idpSession` creates the maps named in the first `constructor-arg`. This
+allows for finer, explicit control of the Hazelcast maps.
+
 For more information about configuring Hazelcast, see [http://hazelcast.org/documentation/](http://hazelcast.org/documentation/).
 
-In `idp.properties`, set each of the storage services you want to use Hazelcast to `shibboleth.HazelcastStorageService:
+In `idp.properties`, set each of the storage services you want to use Hazelcast to one of the configured Hazelcast stores:
 
 * idp.session.StorageService
 * idp.cas.StorageService
