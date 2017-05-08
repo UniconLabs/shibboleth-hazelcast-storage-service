@@ -2,19 +2,26 @@
 
 **Note: this is for Shibboleth IdP v3**
 
-**Note: this is a currently developing project. Feel free to check open tickets and create new tickets for any problems you find**
+## Acquire Distribution
 
-## Building
+There are two options for getting the distribution: downloading a prebuilt archive or building from source.
 
-Currently, there are no binary distributions available and one must build from source.
+### Prebuilt Archive
+
+A distribution may be downloaded from the project's Bintray page: [https://bintray.com/uniconiam/generic/shibboleth-hazelcast-storage-service](https://bintray.com/uniconiam/generic/shibboleth-hazelcast-storage-service)
+
+### Building from Source
 
 1. `git clone https://github.com/UniconLabs/shibboleth-hazelcast-storage-service.git`
 1. `cd shibboleth-hazelcast-storage-service`
 1. `./gradlew clean build`
 
-This will create 2 files in `build/distributions`: a zip file and a tar file. Unpackage one appropriate for your platform
-and you should find an `edit-webapp` directory. Place the files in this new directory in the appropriate `edit-webapp`
-for your IdP. Rebuild and redeploy the `idp.war` file.
+This will create 2 files in `build/distributions`: a zip file and a tar file.
+
+## Installation
+
+Once a distribution is acquired, unpackage the archive and you should find an `edit-webapp` directory. Place the files
+in this new directory in the appropriate `edit-webapp` for your IdP. Rebuild and redeploy the `idp.war` file.
 
 ## Configuration
 

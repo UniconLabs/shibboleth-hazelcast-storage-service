@@ -2,20 +2,11 @@ plugins {
     id 'java'
     id 'idea'
     id 'distribution'
+    id 'com.jfrog.bintray' version '1.6'
+    id 'net.researchgate.release' version '2.4.0'
 }
 
 apply from: 'gradle/shibboleth.gradle'
-
-configurations {
-    provided
-    compile.extendsFrom provided
-}
-
-sourceSets {
-    main {
-        compileClasspath += [configurations.provided]
-    }
-}
 
 repositories {
     maven { url 'https://build.shibboleth.net/nexus/content/groups/public' }
@@ -23,8 +14,8 @@ repositories {
 }
 
 dependencies {
-    provided "org.opensaml:opensaml-storage-api:${project.'opensaml.version'}"
-    provided "ch.qos.logback:logback-core:${project.'logback.version'}"
+    compileOnly "org.opensaml:opensaml-storage-api:${project.'opensaml.version'}"
+    compileOnly "ch.qos.logback:logback-core:${project.'logback.version'}"
 
     compile "com.hazelcast:hazelcast-all:${project.'hazelcast.version'}"
     testCompile "net.shibboleth.idp:idp-authn-api:${project.'shibboleth.version'}"
@@ -39,26 +30,43 @@ distributions {
             duplicatesStrategy = 'exclude'
             into ('edit-webapp/WEB-INF/lib') {
                 from { project.jar }
-                from { (project.configurations.compile - project.configurations.provided) }
+                from { project.configurations.compile }
             }
         }
     }
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = 2.4
+task uploadDist(type: com.jfrog.bintray.gradle.BintrayUploadTask) {
+    apiUrl = 'https://api.bintray.com'
+    user = bintrayUsername
+    apiKey = bintrayAPIKey
+    userOrg = 'uniconiam'
+    packageName = rootProject.name
+    repoName = 'generic'
+
+    versionName = project.version
+    packageLicenses = ['Apache-2.0']
+    packageVcsUrl = 'https://github.com/UniconLabs/shibboleth-hazelcast-storage-service.git'
+
+    dependsOn project.task(type: com.jfrog.bintray.gradle.RecordingCopyTask, com.jfrog.bintray.gradle.RecordingCopyTask.NAME).with {
+        ConfigureUtil.configure({
+            from distZip
+            from distTar
+            into '.'
+        }, it)
+        it.outputs.upToDateWhen {false}
+        return it
+    }
 }
 
-allprojects {
-    gradle.projectsEvaluated {
-        tasks.withType(JavaCompile) {
-            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
-        }
-    }
+afterReleaseBuild.dependsOn uploadDist
+
+task wrapper(type: Wrapper) {
+    gradleVersion = 3.5
 }
 
 idea {
     module {
-        scopes.PROVIDED.plus += [configurations.provided]
+        scopes.PROVIDED.plus += [configurations.compileOnly]
     }
 }
