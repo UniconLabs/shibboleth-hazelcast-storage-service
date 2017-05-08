@@ -101,7 +101,7 @@ In `idp.properties`, set each of the storage services you want to use Hazelcast 
 
 ## Licensing
 
-Licenced under the terms of the Apache License, v2. Please see [LICENSE](LICENSE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0) for more information.
+Licensed under the terms of the Apache License, v2. Please see [LICENSE](LICENSE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0) for more information.
 
 ## Acknowledgements
 
