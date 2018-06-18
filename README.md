@@ -29,7 +29,7 @@ in this new directory in the appropriate `edit-webapp` for your IdP. Rebuild and
 
 In `$IDP_HOME/conf/global.xml`:
 
-```
+```xml
 <bean id="hazelcast" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance">
     <constructor-arg name="config">
         <bean class="com.hazelcast.config.Config">
