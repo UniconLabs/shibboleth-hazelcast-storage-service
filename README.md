@@ -1,6 +1,8 @@
 # Shibboleth Hazelcast storage
 
-**Note: this is for Shibboleth IdP v3**
+## System Requirements
+
+- Shibboleth IdP v3.x
 
 ## Acquire Distribution
 
@@ -25,7 +27,7 @@ in this new directory in the appropriate `edit-webapp` for your IdP. Rebuild and
 
 ## Configuration
 
-In `global.xml`:
+In `$IDP_HOME/conf/global.xml`:
 
 ```
 <bean id="hazelcast" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance">
