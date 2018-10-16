@@ -55,18 +55,16 @@ bintray {
             name = project.version
         }
         filesSpec {
-            ConfigureUtil.configure({
-                from distZip
-                from distTar
-                into '.'
-            }, it)
+            tasks.getByName('distZip')
+            tasks.getByName('distTar')
+            into '.'
         }
     }
 }
 
 afterReleaseBuild.dependsOn bintrayUpload
 
-task wrapper(type: Wrapper) {
+wrapper {
     gradleVersion = '4.10.2'
 }
 
