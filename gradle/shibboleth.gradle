@@ -57,7 +57,8 @@ task overlay(dependsOn: ['jar', 'testJar', 'unpackShibboleth', 'processIdpProper
     doLast {
         copy {
             from project.jar
-            from (project.configurations.compile - project.configurations.provided)
+            // from (project.configurations.compile - project.configurations.provided)
+            project.configurations.compile
             from project.testJar
             into file("${unpackShibboleth.outputs.files[0]}/webapp/WEB-INF/lib")
         }

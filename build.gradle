@@ -2,8 +2,8 @@ plugins {
     id 'java'
     id 'idea'
     id 'distribution'
-    id 'com.jfrog.bintray' version '1.6'
-    id 'net.researchgate.release' version '2.4.0'
+    id 'com.jfrog.bintray' version '1.8.4'
+    id 'net.researchgate.release' version '2.7.0'
 }
 
 apply from: 'gradle/shibboleth.gradle'
@@ -24,6 +24,12 @@ dependencies {
     testCompile "org.testng:testng:6.9.9"
 }
 
+test {
+    useTestNG()
+    scanForTestClasses = false
+    include 'net/unicon/iam/shibboleth/**/*'
+}
+
 distributions {
     main {
         contents {
@@ -36,33 +42,32 @@ distributions {
     }
 }
 
-task uploadDist(type: com.jfrog.bintray.gradle.BintrayUploadTask) {
-    apiUrl = 'https://api.bintray.com'
+bintray {
     user = bintrayUsername
-    apiKey = bintrayAPIKey
-    userOrg = 'uniconiam'
-    packageName = rootProject.name
-    repoName = 'generic'
-
-    versionName = project.version
-    packageLicenses = ['Apache-2.0']
-    packageVcsUrl = 'https://github.com/UniconLabs/shibboleth-hazelcast-storage-service.git'
-
-    dependsOn project.task(type: com.jfrog.bintray.gradle.RecordingCopyTask, com.jfrog.bintray.gradle.RecordingCopyTask.NAME).with {
-        ConfigureUtil.configure({
-            from distZip
-            from distTar
-            into '.'
-        }, it)
-        it.outputs.upToDateWhen {false}
-        return it
+    key = bintrayAPIKey
+    pkg {
+        repo = 'generic'
+        name = rootProject.name
+        userOrg = 'uniconiam'
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/UniconLabs/shibboleth-hazelcast-storage-service.git'
+        version {
+            name = project.version
+        }
+        filesSpec {
+            ConfigureUtil.configure({
+                from distZip
+                from distTar
+                into '.'
+            }, it)
+        }
     }
 }
 
-afterReleaseBuild.dependsOn uploadDist
+afterReleaseBuild.dependsOn bintrayUpload
 
 task wrapper(type: Wrapper) {
-    gradleVersion = 3.5
+    gradleVersion = '4.10.2'
 }
 
 idea {
