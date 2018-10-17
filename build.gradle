@@ -55,8 +55,8 @@ bintray {
             name = project.version
         }
         filesSpec {
-            tasks.getByName('distZip')
-            tasks.getByName('distTar')
+            tasks.getByName('distZip').outputs
+            tasks.getByName('distTar').outputs
             into '.'
         }
     }
