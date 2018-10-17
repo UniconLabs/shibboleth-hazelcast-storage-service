@@ -54,11 +54,7 @@ bintray {
         version {
             name = project.version
         }
-        filesSpec {
-            tasks.getByName('distZip').outputs
-            tasks.getByName('distTar').outputs
-            into '.'
-        }
+        configurations = ['archives']
     }
 }
 
