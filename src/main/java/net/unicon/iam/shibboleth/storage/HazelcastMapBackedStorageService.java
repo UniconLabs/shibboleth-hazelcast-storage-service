@@ -1,6 +1,7 @@
 package net.unicon.iam.shibboleth.storage;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.PagingPredicate;
 import net.shibboleth.utilities.java.support.annotation.constraint.NotEmpty;
@@ -11,7 +12,6 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
 
 /**
  * Implementation of {@link org.opensaml.storage.AbstractMapBackedStorageService} that uses
@@ -46,7 +46,7 @@ public class HazelcastMapBackedStorageService extends AbstractHazelcastMapBacked
     @Override
     public void updateContextExpiration(@Nonnull String context, @Nullable Long expiration) throws IOException {
         IMap<String, StorageRecord> backingMap = this.hazelcastInstance.getMap(context);
-        final Lock lock = hazelcastInstance.getLock(context);
+        final ILock lock = hazelcastInstance.getLock(context);
         lock.lock();
         try {
             PagingPredicate pagingPredicate = new PagingPredicate(this.pageSize);
@@ -59,6 +59,7 @@ public class HazelcastMapBackedStorageService extends AbstractHazelcastMapBacked
             }
         } finally {
             lock.unlock();
+            lock.destroy();
         }
     }
 

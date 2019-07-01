@@ -1,6 +1,7 @@
 package net.unicon.iam.shibboleth.storage;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
@@ -20,7 +21,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
 public abstract class AbstractHazelcastMapBackedStorageService extends AbstractStorageService {
     private static final Logger logger = LoggerFactory.getLogger(AbstractHazelcastMapBackedStorageService.class);
@@ -110,7 +110,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
     }
 
     private Long doUpdate(final Long version, final String context, final String key, final String value, final Long expiration) throws IOException {
-        final Lock lock = hazelcastInstance.getLock(context + ":" + key);
+        final ILock lock = hazelcastInstance.getLock(context + ":" + key);
         lock.lock();
         try {
             MutableStorageRecord record = (MutableStorageRecord) this.doRead(context, key, null).getSecond();
@@ -132,6 +132,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
             return record.getVersion();
         } finally {
             lock.unlock();
+            lock.destroy();
         }
     }
 
