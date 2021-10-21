@@ -1,33 +1,17 @@
-# Shibboleth Hazelcast storage
+# Shibboleth Identity Provider Hazelcast Storage Service
+
+This package provides a storage service implementation for the Shibboleth IdP (v4.1 or later) that is based on Hazelcast [ http://hazelcast.org ].
+The service is deployed as a Shibboleth Plugin (see [ https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1294074003/PluginInstallation ])
 
 ## System Requirements
 
-- Shibboleth IdP v3.x
+- Shibboleth IdP v4.1
 
-## Acquire Distribution
+## Getting started
 
-There are two options for getting the distribution: downloading a prebuilt archive or building from source.
-
-### Prebuilt Archive
-
-A distribution may be downloaded from the project's Bintray page: [https://bintray.com/uniconiam/generic/shibboleth-hazelcast-storage-service](https://bintray.com/uniconiam/generic/shibboleth-hazelcast-storage-service)
-
-### Building from Source
-
-1. `git clone https://github.com/UniconLabs/shibboleth-hazelcast-storage-service.git`
-1. `cd shibboleth-hazelcast-storage-service`
-1. `./gradlew clean build`
-
-This will create 2 files in `build/distributions`: a zip file and a tar file.
-
-## Installation
-
-Once a distribution is acquired, unpackage the archive and you should find an `edit-webapp` directory. Place the files
-in this new directory in the appropriate `edit-webapp` for your IdP. Rebuild and redeploy the `idp.war` file.
-
-## Configuration
-
-In `$IDP_HOME/conf/global.xml`:
+1. Download the distribution from [ TBD ]. Download either the `.tar.gz` or `.zip` file **and** the associated GPG signature file (the `.asc` file).
+2. Install the plugin following instructions at - [ https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1294074003/PluginInstallation ]
+3. Add storage service bean to `global.xml`. For example:
 
 ```xml
 <bean id="hazelcast" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance">
@@ -65,18 +49,18 @@ In `$IDP_HOME/conf/global.xml`:
 </bean>
 
 <bean id="my.HazelcastStorageService"
-      class="net.unicon.iam.shibboleth.storage.HazelcastMapBackedStorageService">
+      class="HazelcastMapBackedStorageService">
     <constructor-arg name="hazelcastInstance" ref="hazelcast" />
 </bean>
 
 <bean id="my.StorageService.cas"
-        class="net.unicon.iam.shibboleth.storage.SingleHazelcastMapBackedStorageService">
+        class="SingleHazelcastMapBackedStorageService">
     <constructor-arg value="cas" />
     <constructor-arg ref="hazelcast" />
 </bean>
 
 <bean id="my.StorageService.idpSession"
-      class="net.unicon.iam.shibboleth.storage.SingleHazelcastMapBackedStorageService">
+      class="SingleHazelcastMapBackedStorageService">
     <constructor-arg value="session" />
     <constructor-arg ref="hazelcast" />
 </bean>
@@ -104,6 +88,12 @@ In `idp.properties`, set each of the storage services you want to use Hazelcast 
 ## Licensing
 
 Licensed under the terms of the Apache License, v2. Please see [LICENSE](LICENSE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0) for more information.
+
+## Included libraries and dependency tree
+
+        \--- com.hazelcast:hazelcast-all:3.10.4
+            \--- com.eclipsesource.minimal-json:minimal-json:0.9.4
+
 
 ## Acknowledgements
 
