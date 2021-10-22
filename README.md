@@ -1,6 +1,6 @@
 # Shibboleth Identity Provider Hazelcast Storage Service
 
-This package provides a storage service implementation for the Shibboleth IdP (v4.1 or later) that is based on Hazelcast [ http://hazelcast.org ].
+This package provides a storage service implementation for the Shibboleth IdP (v4.1 or later) that is based on Hazelcast v4 [ http://hazelcast.org ].
 The service is deployed as a Shibboleth Plugin (see [ https://shibboleth.atlassian.net/wiki/spaces/IDP4/pages/1294074003/PluginInstallation ])
 
 ## System Requirements
@@ -91,8 +91,7 @@ Licensed under the terms of the Apache License, v2. Please see [LICENSE](LICENSE
 
 ## Included libraries and dependency tree
 
-        \--- com.hazelcast:hazelcast-all:3.10.4
-            \--- com.eclipsesource.minimal-json:minimal-json:0.9.4
+        \--- com.hazelcast:hazelcast-all:4.2.2
 
 
 ## Acknowledgements

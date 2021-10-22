@@ -1,8 +1,9 @@
 package net.unicon.iam.shibboleth.storage.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.Predicates;
 import net.shibboleth.utilities.java.support.annotation.constraint.NotEmpty;
 import org.opensaml.storage.StorageRecord;
 
@@ -46,10 +47,10 @@ public class HazelcastMapBackedStorageService extends AbstractHazelcastMapBacked
     @Override
     public void updateContextExpiration(@Nonnull String context, @Nullable Long expiration) throws IOException {
         IMap<String, StorageRecord> backingMap = this.hazelcastInstance.getMap(context);
-        final Lock lock = hazelcastInstance.getLock(context);
+        final Lock lock = hazelcastInstance.getCPSubsystem().getLock(context);
         lock.lock();
         try {
-            PagingPredicate pagingPredicate = new PagingPredicate(this.pageSize);
+            PagingPredicate pagingPredicate = Predicates.pagingPredicate(this.pageSize);
             for (Set<Map.Entry<String, StorageRecord>> entrySet = backingMap.entrySet(pagingPredicate);
                  !entrySet.isEmpty();
                  pagingPredicate.nextPage(), entrySet = backingMap.entrySet(pagingPredicate)) {

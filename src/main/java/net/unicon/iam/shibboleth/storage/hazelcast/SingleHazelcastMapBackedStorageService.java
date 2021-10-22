@@ -1,10 +1,10 @@
 package net.unicon.iam.shibboleth.storage.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.query.EntryObject;
+import com.hazelcast.map.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
 import net.shibboleth.utilities.java.support.annotation.constraint.NotEmpty;
 import org.opensaml.storage.StorageRecord;
 
@@ -38,7 +38,7 @@ public class SingleHazelcastMapBackedStorageService extends AbstractHazelcastMap
 
     private Set getContextKeySet(String context) {
         IMap backingMap = this.getMap(context, null);
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        PredicateBuilder.EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
         Predicate contextPredicate = e.key().get("context").equal(context);
         return backingMap.keySet(contextPredicate);
     }
