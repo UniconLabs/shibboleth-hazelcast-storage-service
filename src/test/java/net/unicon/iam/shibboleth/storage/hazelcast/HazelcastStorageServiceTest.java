@@ -1,7 +1,7 @@
-package net.unicon.iam.shibboleth.storage;
+package net.unicon.iam.shibboleth.storage.hazelcast;
 
 import org.opensaml.storage.StorageRecord;
-import org.opensaml.storage.StorageServiceTest;
+import org.opensaml.storage.testing.StorageServiceTest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;

@@ -3,14 +3,8 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "commons-configuration:commons-configuration:1.10"
+        classpath "commons-configuration:commons-configuration:${project.'commons-configuration.version'}"
     }
-}
-
-
-configurations {
-    shibboleth
-    shibbolethAntTasks
 }
 
 repositories {
@@ -18,11 +12,18 @@ repositories {
     maven { url 'https://build.shibboleth.net/nexus/content/groups/public' }
 }
 
+configurations {
+    shibboleth
+    shibbolethAntTasks
+}
+
 dependencies {
+    compileOnly "net.shibboleth.idp:idp-distribution:${project.'shibboleth.version'}"
     shibboleth "net.shibboleth.idp:idp-distribution:${project.'shibboleth.version'}@tar.gz"
 
     shibbolethAntTasks "net.shibboleth.idp:idp-installer:${project.'shibboleth.version'}"
-    shibbolethAntTasks "org.bouncycastle:bcpkix-jdk15on:1.53"
+    shibbolethAntTasks "org.bouncycastle:bcpkix-jdk15on:${project.'bouncycastle.version'}"
+    shibbolethAntTasks "net.shibboleth.utilities:java-support:${project.'shibboleth.utilities.java-support.version'}"
 }
 
 task unpackShibboleth {
@@ -136,7 +137,7 @@ task generateSealerKey(dependsOn: 'processIdpProperties') {
 
 ant.taskdef(
         name: 'selfsignedcert',
-        classname: 'net.shibboleth.idp.installer.ant.SelfSignedCertificateGeneratorTask',
+        classname: 'net.shibboleth.idp.installer.ant.impl.SelfSignedCertificateGeneratorTask',
         classpath: configurations.shibbolethAntTasks.asPath
 )
 

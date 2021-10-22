@@ -50,12 +50,12 @@
     </bean>
 
     <bean id="test.cas.hazelcast"
-          class="net.unicon.iam.shibboleth.storage.SingleHazelcastMapBackedStorageService"
+          class="net.unicon.iam.shibboleth.storage.hazelcast.SingleHazelcastMapBackedStorageService"
           c:mapName="cas"
           c:hazelcastInstance-ref="hazelcast"/>
 
     <bean id="test.shib.hazelcast"
-          class="net.unicon.iam.shibboleth.storage.SingleHazelcastMapBackedStorageService"
+          class="net.unicon.iam.shibboleth.storage.hazelcast.SingleHazelcastMapBackedStorageService"
           c:mapName="shib"
           c:hazelcastInstance-ref="hazelcast"/>
 </beans>

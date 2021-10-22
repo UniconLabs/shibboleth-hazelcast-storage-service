@@ -1,11 +1,11 @@
-package net.unicon.iam.shibboleth.storage;
+package net.unicon.iam.shibboleth.storage.hazelcast;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.serialization.SerializationService;
 import net.shibboleth.utilities.java.support.annotation.constraint.NotEmpty;
 import net.shibboleth.utilities.java.support.annotation.constraint.Positive;
 import net.shibboleth.utilities.java.support.collection.Pair;
@@ -110,7 +110,7 @@ public abstract class AbstractHazelcastMapBackedStorageService extends AbstractS
     }
 
     private Long doUpdate(final Long version, final String context, final String key, final String value, final Long expiration) throws IOException {
-        final Lock lock = hazelcastInstance.getLock(context + ":" + key);
+        final Lock lock = hazelcastInstance.getCPSubsystem().getLock(context + ":" + key);
         lock.lock();
         try {
             MutableStorageRecord record = (MutableStorageRecord) this.doRead(context, key, null).getSecond();
