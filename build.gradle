@@ -1,97 +1,33 @@
 plugins {
     id 'java'
+    id 'groovy'
     id 'distribution'
     id 'signing'
 }
 
-apply from: 'gradle/shibboleth.gradle'
-
 repositories {
     maven { url 'https://build.shibboleth.net/nexus/content/groups/public' }
-    jcenter()
     mavenCentral()
 }
 
+project.ext.config = new ConfigSlurper().parse(new URL("https://raw.githubusercontent.com/UniconLabs/shibboleth-plugin-parent/develop/config.groovy"))
+
 dependencies {
-    compileOnly "net.shibboleth.idp:idp-admin-api:${project.'shibboleth.version'}"
-    compileOnly "net.shibboleth.idp:idp-admin-impl:${project.'shibboleth.version'}"
-    compileOnly "org.opensaml:opensaml-storage-api:${project.'opensaml.version'}"
+    compileOnly "net.shibboleth.idp:idp-admin-api:$config.common.shibboleth.version"
+    compileOnly "net.shibboleth.idp:idp-admin-impl:$config.common.shibboleth.version"
+    compileOnly "org.opensaml:opensaml-storage-api:$config.common.opensaml.version"
     compileOnly "ch.qos.logback:logback-core:${project.'logback.version'}"
 
     implementation "com.hazelcast:hazelcast-all:${project.'hazelcast.version'}"
 
-    testImplementation "net.shibboleth.idp:idp-authn-api:${project.'shibboleth.version'}"
-    testImplementation "org.opensaml:opensaml-storage-api:${project.'opensaml.version'}:tests@jar"
+    testImplementation "net.shibboleth.idp:idp-authn-api:$config.common.shibboleth.version"
+    testImplementation "org.opensaml:opensaml-storage-api:$config.common.opensaml.version:tests@jar"
     testImplementation "junit:junit:${project.'junit.version'}"
     testImplementation "org.testng:testng:${project.'testng.version'}"
 }
 
-processResources {
-    from ('src/main/java') {
-        include "**/*.properties"
-    }
-}
-
-clean {
-    delete (layout.projectDirectory.dir("src/dist/bootstrap/plugin.properties"))
-    delete fileTree(layout.projectDirectory.dir("src/dist/webapp/WEB-INF/lib")) {
-        include "**/*.jar"
-    }
-}
-
-jar {
-    manifest {
-        attributes "Name": "net/unicon/iam/shibboleth/storage/hazelcast/plugin/",
-                "Implementation-Vendor": "unicon.net",
-                "Implementation-Version": "${project.version}",
-                "Implementation-Title": "${project.name}"
-
-    }
-}
-jar.finalizedBy("buildPluginArtifacts")
-
-task buildPluginArtifacts(type: GradleBuild) {
-    group 'Build'
-    description 'Build the deployable artifacts for the plugin'
-
-    copy {
-        from layout.projectDirectory.dir("src/main/java/net/unicon/iam/shibboleth/storage/hazelcast/plugin/plugin.properties")
-        into layout.projectDirectory.dir("src/dist/bootstrap")
-    }
-    copy {
-        from layout.buildDirectory.dir("libs/${project.name}-${project.version}.jar")
-        into layout.projectDirectory.dir("src/dist/webapp/WEB-INF/lib")
-    }
-    copy {
-        from { project.configurations.runtimeClasspath }
-        into ('src/dist/webapp/WEB-INF/lib')
-    }
-    finalizedBy distTar {
-        archivesBaseName = "${project.name}"
-        archiveExtension = 'tar.gz'
-        compression = Compression.GZIP
-
-        from layout.projectDirectory.dir("src/dist/")
-        exclude "**/.gitkeep"
-        exclude "/${project.name}-${project.version}"
-        finalizedBy distZip {
-            archivesBaseName = "${project.name}"
-
-            from layout.projectDirectory.dir("src/dist/")
-            exclude "**/.gitkeep"
-            exclude "/${project.name}-${project.version}"
-        }
-    }
-}
-
-artifacts {
-    archives layout.buildDirectory.dir("distributions/${project.name}-${project.version}.zip")
-    archives layout.buildDirectory.dir("distributions/${project.name}-${project.version}.tar.gz")
-}
-
-signing {
-    sign configurations.archives
-}
+apply from: 'gradle/shibboleth.gradle'
+apply from: 'https://raw.githubusercontent.com/UniconLabs/shibboleth-plugin-parent/develop/build.gradle'
 
 test {
     useTestNG()

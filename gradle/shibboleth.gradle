@@ -1,6 +1,6 @@
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath "commons-configuration:commons-configuration:${project.'commons-configuration.version'}"
@@ -8,7 +8,7 @@ buildscript {
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
     maven { url 'https://build.shibboleth.net/nexus/content/groups/public' }
 }
 
@@ -18,10 +18,10 @@ configurations {
 }
 
 dependencies {
-    compileOnly "net.shibboleth.idp:idp-distribution:${project.'shibboleth.version'}"
-    shibboleth "net.shibboleth.idp:idp-distribution:${project.'shibboleth.version'}@tar.gz"
+    compileOnly "net.shibboleth.idp:idp-distribution:$config.common.shibboleth.version"
+    shibboleth "net.shibboleth.idp:idp-distribution:$config.common.shibboleth.version@tar.gz"
 
-    shibbolethAntTasks "net.shibboleth.idp:idp-installer:${project.'shibboleth.version'}"
+    shibbolethAntTasks "net.shibboleth.idp:idp-installer:$config.common.shibboleth.version"
     shibbolethAntTasks "org.bouncycastle:bcpkix-jdk15on:${project.'bouncycastle.version'}"
     shibbolethAntTasks "net.shibboleth.utilities:java-support:${project.'shibboleth.utilities.java-support.version'}"
 }
